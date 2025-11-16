@@ -47,3 +47,11 @@ WHERE u.team_name = oldr.team_name
   AND u.user_id NOT IN (SELECT r.user_id FROM pr_reviewers r WHERE r.pr_id = pr.pr_id)
 ORDER BY random()
 LIMIT 1;
+
+-- name: GetPRsForReviewer :many
+SELECT pr_id, name, author_id, status, created_at, merged_at
+FROM pull_requests
+WHERE pr_id IN (
+  SELECT pr_id FROM pr_reviewers WHERE user_id = $1
+)
+ORDER BY created_at DESC;
