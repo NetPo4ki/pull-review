@@ -11,13 +11,26 @@ import (
 	"github.com/NetPo4ki/pull-review/internal/app"
 	"github.com/NetPo4ki/pull-review/internal/config"
 	"github.com/NetPo4ki/pull-review/internal/log"
+	"github.com/NetPo4ki/pull-review/internal/repo"
+	teamssvc "github.com/NetPo4ki/pull-review/internal/service/teams"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
 	cfg := config.Load()
 	logger := log.NewLogger(cfg.AppEnv, cfg.LogLevel)
 
-	handler := app.NewRouter(logger)
+	pool, err := pgxpool.New(context.Background(), cfg.DBDSN)
+	if err != nil {
+		logger.Error("db_pool_new_error", "err", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	store := repo.NewStore(pool)
+	teamsService := teamssvc.New(store, store)
+
+	handler := app.NewRouter(logger, teamsService)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,
