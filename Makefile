@@ -1,6 +1,6 @@
 APP_NAME := pull-review
 PORT := 8080
-DB_DSN ?= postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+DB_DSN ?= postgres://postgres:postgres@localhost:5432/pull_review?sslmode=disable
 
 .PHONY: build run lint test migrate-up migrate-down compose-up compose-down
 
