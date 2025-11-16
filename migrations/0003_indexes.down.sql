@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS idx_pr_reviewers_user;
+
+
