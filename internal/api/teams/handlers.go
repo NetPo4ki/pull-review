@@ -41,6 +41,7 @@ func (h *Handler) addTeam(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case err == srv.ErrTeamExists:
 			writeError(w, http.StatusBadRequest, "TEAM_EXISTS", "team_name already exists")
+			return
 		default:
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
