@@ -1,0 +1,51 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pull_review
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pull_review"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  migrator:
+    image: migrate/migrate:latest
+    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@db:5432/pull_review?sslmode=disable", "up"]
+    volumes:
+      - ../migrations:/migrations:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    environment:
+      - DB_DSN=postgres://postgres:postgres@db:5432/pull_review?sslmode=disable
+      - APP_ENV=local
+      - LOG_LEVEL=info
+      - HTTP_PORT=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+
+  tester:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      api:
+        condition: service_started
+    entrypoint: ["/bin/sh","-c"]
+    command: >
+      "set -e;
+      until curl -sf http://api:8080/ready; do echo waiting api; sleep 1; done;
+      curl -s -X POST http://api:8080/team/add -H 'Content-Type: application/json' -d '{\"team_name\":\"e2e-team\",\"members\":[{\"user_id\":\"e2e-u1\",\"username\":\"A\",\"is_active\":true},{\"user_id\":\"e2e-u2\",\"username\":\"B\",\"is_active\":true}]}' >/dev/null;
+      curl -s -X POST http://api:8080/pullRequest/create -H 'Content-Type: application/json' -d '{\"pull_request_id\":\"e2e-pr-1\",\"pull_request_name\":\"E2E\",\"author_id\":\"e2e-u1\"}' | grep '\"status\":\"OPEN\"' >/dev/null;
+      curl -s -X POST http://api:8080/pullRequest/merge -H 'Content-Type: application/json' -d '{\"pull_request_id\":\"e2e-pr-1\"}' | grep '\"status\":\"MERGED\"' >/dev/null;
+      echo E2E OK"
