@@ -3,9 +3,9 @@ package prs
 import "errors"
 
 var (
-	ErrPRExists    = errors.New("PR уже существует")
-	ErrNotFound    = errors.New("PR не найден")
-	ErrPRMerged    = errors.New("Нельзя менять после MERGED")
-	ErrNotAssigned = errors.New("Пользователь не был назначен ревьювером")
-	ErrNoCandidate = errors.New("Нет доступных кандидатов")
+	ErrPRExists    = errors.New("pr уже существует")
+	ErrNotFound    = errors.New("pr не найден")
+	ErrPRMerged    = errors.New("нельзя менять после MERGED")
+	ErrNotAssigned = errors.New("пользователь не был назначен ревьювером")
+	ErrNoCandidate = errors.New("нет доступных кандидатов")
 )

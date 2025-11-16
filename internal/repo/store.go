@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/NetPo4ki/pull-review/internal/repo/sqlc"
+	statssvc "github.com/NetPo4ki/pull-review/internal/service/stats"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -37,6 +38,36 @@ func (s *Store) UpsertUser(ctx context.Context, userID, username, teamName strin
 		TeamName: teamName,
 		IsActive: isActive,
 	})
+}
+
+func (s *Store) AssignmentsPerUser(ctx context.Context) ([]statssvc.AssignmentsPerUserRow, error) {
+	rows, err := s.q.AssignmentsPerUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]statssvc.AssignmentsPerUserRow, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, statssvc.AssignmentsPerUserRow{
+			UserID:        r.UserID,
+			AssignedCount: r.AssignedCount,
+		})
+	}
+	return out, nil
+}
+
+func (s *Store) AssignmentsPerPR(ctx context.Context) ([]statssvc.AssignmentsPerPRRow, error) {
+	rows, err := s.q.AssignmentsPerPR(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]statssvc.AssignmentsPerPRRow, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, statssvc.AssignmentsPerPRRow{
+			PrID:          r.PrID,
+			ReviewerCount: r.ReviewerCount,
+		})
+	}
+	return out, nil
 }
 
 func (s *Store) CreatePR(ctx context.Context, prID, name, authorID string) (sqlc.PullRequest, error) {

@@ -2,4 +2,4 @@ package users
 
 import "errors"
 
-var ErrNotFound = errors.New("Пользователь не найден")
+var ErrNotFound = errors.New("пользователь не найден")

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/NetPo4ki/pull-review/internal/repo"
 	"github.com/NetPo4ki/pull-review/internal/repo/sqlc"
 )
 
@@ -23,13 +22,17 @@ type PRsRepo interface {
 	CandidateForReassign(ctx context.Context, prID, oldUserID string) (string, error)
 }
 
+type TxRunner interface {
+	Do(ctx context.Context, fn func(context.Context, *sqlc.Queries) error) error
+}
+
 type Service struct {
 	users UsersRepo
 	prs   PRsRepo
-	tx    *repo.TxManager
+	tx    TxRunner
 }
 
-func New(users UsersRepo, prs PRsRepo, tx *repo.TxManager) *Service {
+func New(users UsersRepo, prs PRsRepo, tx TxRunner) *Service {
 	return &Service{users: users, prs: prs, tx: tx}
 }
 
