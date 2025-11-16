@@ -143,6 +143,42 @@ func (q *Queries) GetPRReviewers(ctx context.Context, prID string) ([]string, er
 	return items, nil
 }
 
+const getPRsForReviewer = `-- name: GetPRsForReviewer :many
+SELECT pr_id, name, author_id, status, created_at, merged_at
+FROM pull_requests
+WHERE pr_id IN (
+  SELECT pr_id FROM pr_reviewers WHERE user_id = $1
+)
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetPRsForReviewer(ctx context.Context, userID string) ([]PullRequest, error) {
+	rows, err := q.db.Query(ctx, getPRsForReviewer, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PullRequest{}
+	for rows.Next() {
+		var i PullRequest
+		if err := rows.Scan(
+			&i.PrID,
+			&i.Name,
+			&i.AuthorID,
+			&i.Status,
+			&i.CreatedAt,
+			&i.MergedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertPRReviewer = `-- name: InsertPRReviewer :exec
 INSERT INTO pr_reviewers (pr_id, user_id)
 VALUES ($1, $2)
