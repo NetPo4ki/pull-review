@@ -96,6 +96,20 @@ func (q *Queries) CreatePR(ctx context.Context, arg CreatePRParams) (PullRequest
 	return i, err
 }
 
+const deletePRReviewer = `-- name: DeletePRReviewer :exec
+DELETE FROM pr_reviewers WHERE pr_id = $1 AND user_id = $2
+`
+
+type DeletePRReviewerParams struct {
+	PrID   string `db:"pr_id" json:"pr_id"`
+	UserID string `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) DeletePRReviewer(ctx context.Context, arg DeletePRReviewerParams) error {
+	_, err := q.db.Exec(ctx, deletePRReviewer, arg.PrID, arg.UserID)
+	return err
+}
+
 const getPR = `-- name: GetPR :one
 SELECT pr_id, name, author_id, status, created_at, merged_at
 FROM pull_requests
