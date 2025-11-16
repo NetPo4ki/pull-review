@@ -38,3 +38,28 @@ func (s *Store) UpsertUser(ctx context.Context, userID, username, teamName strin
 		IsActive: isActive,
 	})
 }
+
+func (s *Store) CreatePR(ctx context.Context, prID, name, authorID string) (sqlc.PullRequest, error) {
+	return s.q.CreatePR(ctx, sqlc.CreatePRParams{PrID: prID, Name: name, AuthorID: authorID})
+}
+func (s *Store) InsertPRReviewer(ctx context.Context, prID, userID string) error {
+	return s.q.InsertPRReviewer(ctx, sqlc.InsertPRReviewerParams{PrID: prID, UserID: userID})
+}
+func (s *Store) DeletePRReviewer(ctx context.Context, prID, userID string) error {
+	return s.q.DeletePRReviewer(ctx, sqlc.DeletePRReviewerParams{PrID: prID, UserID: userID})
+}
+func (s *Store) GetPR(ctx context.Context, prID string) (sqlc.PullRequest, error) {
+	return s.q.GetPR(ctx, prID)
+}
+func (s *Store) GetPRReviewers(ctx context.Context, prID string) ([]string, error) {
+	return s.q.GetPRReviewers(ctx, prID)
+}
+func (s *Store) UpdatePRStatusIfOpen(ctx context.Context, prID string) (sqlc.PullRequest, error) {
+	return s.q.UpdatePRStatusIfOpen(ctx, prID)
+}
+func (s *Store) CandidatesForCreate(ctx context.Context, authorID string, limitCount int32) ([]string, error) {
+	return s.q.CandidatesForCreate(ctx, sqlc.CandidatesForCreateParams{AuthorID: authorID, LimitCount: limitCount})
+}
+func (s *Store) CandidateForReassign(ctx context.Context, prID, oldUserID string) (string, error) {
+	return s.q.CandidateForReassign(ctx, sqlc.CandidateForReassignParams{OldUserID: oldUserID, PrID: prID})
+}

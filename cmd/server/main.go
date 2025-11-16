@@ -12,6 +12,7 @@ import (
 	"github.com/NetPo4ki/pull-review/internal/config"
 	"github.com/NetPo4ki/pull-review/internal/log"
 	"github.com/NetPo4ki/pull-review/internal/repo"
+	prssvc "github.com/NetPo4ki/pull-review/internal/service/prs"
 	teamssvc "github.com/NetPo4ki/pull-review/internal/service/teams"
 	userssvc "github.com/NetPo4ki/pull-review/internal/service/users"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -31,8 +32,10 @@ func main() {
 	store := repo.NewStore(pool)
 	teamsService := teamssvc.New(store, store)
 	usersService := userssvc.New(store, store)
+	tx := repo.NewTxManager(pool)
+	prService := prssvc.New(store, store, tx)
 
-	handler := app.NewRouter(logger, teamsService, usersService)
+	handler := app.NewRouter(logger, teamsService, usersService, prService)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,

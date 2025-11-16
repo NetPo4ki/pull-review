@@ -55,3 +55,6 @@ WHERE pr_id IN (
   SELECT pr_id FROM pr_reviewers WHERE user_id = $1
 )
 ORDER BY created_at DESC;
+
+-- name: DeletePRReviewer :exec
+DELETE FROM pr_reviewers WHERE pr_id = $1 AND user_id = $2;
