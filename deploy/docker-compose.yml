@@ -12,6 +12,15 @@ services:
       interval: 2s
       timeout: 2s
       retries: 30
+  
+  migrator:
+    image: migrate/migrate:latest
+    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@db:5432/pull_review?sslmode=disable", "up"]
+    volumes:
+      - ../migrations:/migrations:ro
+    depends_on:
+      db:
+        condition: service_healthy
 
   api:
     build:
@@ -22,5 +31,5 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      db:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
