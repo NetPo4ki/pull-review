@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,6 +14,7 @@ import (
 	"github.com/NetPo4ki/pull-review/internal/log"
 	"github.com/NetPo4ki/pull-review/internal/repo"
 	prssvc "github.com/NetPo4ki/pull-review/internal/service/prs"
+	statsvc "github.com/NetPo4ki/pull-review/internal/service/stats"
 	teamssvc "github.com/NetPo4ki/pull-review/internal/service/teams"
 	userssvc "github.com/NetPo4ki/pull-review/internal/service/users"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,6 +23,8 @@ import (
 func main() {
 	cfg := config.Load()
 	logger := log.NewLogger(cfg.AppEnv, cfg.LogLevel)
+	slog.SetDefault(logger)
+	slog.SetDefault(logger)
 
 	pool, err := pgxpool.New(context.Background(), cfg.DBDSN)
 	if err != nil {
@@ -34,8 +38,9 @@ func main() {
 	usersService := userssvc.New(store, store)
 	tx := repo.NewTxManager(pool)
 	prService := prssvc.New(store, store, tx)
+	statsService := statsvc.New(store)
 
-	handler := app.NewRouter(logger, teamsService, usersService, prService)
+	handler := app.NewRouter(logger, teamsService, usersService, prService, statsService, pool)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.HTTPPort,

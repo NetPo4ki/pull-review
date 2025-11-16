@@ -3,6 +3,7 @@ package prs
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/NetPo4ki/pull-review/internal/repo/sqlc"
@@ -26,6 +27,10 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 	var in CreatePRRequest
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(in.PullRequestID) == "" || strings.TrimSpace(in.PullRequestName) == "" || strings.TrimSpace(in.AuthorID) == "" {
+		http.Error(w, "pull_request_id, pull_request_name and author_id are required", http.StatusBadRequest)
 		return
 	}
 	pr, reviewers, err := h.s.CreatePR(r.Context(), in.PullRequestID, in.PullRequestName, in.AuthorID)
@@ -54,6 +59,10 @@ func (h *Handler) merge(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
+	if strings.TrimSpace(in.PullRequestID) == "" {
+		http.Error(w, "pull_request_id is required", http.StatusBadRequest)
+		return
+	}
 	pr, err := h.s.MergePR(r.Context(), in.PullRequestID)
 	if err != nil {
 		if err == svc.ErrNotFound {
@@ -73,6 +82,10 @@ func (h *Handler) reassign(w http.ResponseWriter, r *http.Request) {
 	var in ReassignRequest
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(in.PullRequestID) == "" || strings.TrimSpace(in.OldUserID) == "" {
+		http.Error(w, "pull_request_id and old_user_id are required", http.StatusBadRequest)
 		return
 	}
 	newID, err := h.s.ReassignReviewer(r.Context(), in.PullRequestID, in.OldUserID)
@@ -102,7 +115,11 @@ func (h *Handler) reassign(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 func toDTO(pr sqlc.PullRequest, reviewers []string) PRDTO {
-	var merged *string
+	var created, merged *string
+	if pr.CreatedAt.Valid {
+		s := pr.CreatedAt.Time.UTC().Format(time.RFC3339)
+		created = &s
+	}
 	if pr.MergedAt.Valid {
 		s := pr.MergedAt.Time.UTC().Format(time.RFC3339)
 		merged = &s
@@ -113,6 +130,7 @@ func toDTO(pr sqlc.PullRequest, reviewers []string) PRDTO {
 		AuthorID:        pr.AuthorID,
 		Status:          string(pr.Status),
 		Assigned:        reviewers,
+		CreatedAt:       created,
 		MergedAt:        merged,
 	}
 }

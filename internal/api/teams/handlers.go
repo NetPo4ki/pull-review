@@ -2,7 +2,9 @@ package teams
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
+	"strings"
 
 	srv "github.com/NetPo4ki/pull-review/internal/service/teams"
 	"github.com/go-chi/chi/v5"
@@ -27,6 +29,16 @@ func (h *Handler) addTeam(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
+	if strings.TrimSpace(in.TeamName) == "" {
+		http.Error(w, "team_name is required", http.StatusBadRequest)
+		return
+	}
+	for _, m := range in.Members {
+		if strings.TrimSpace(m.UserID) == "" || strings.TrimSpace(m.Username) == "" {
+			http.Error(w, "member user_id and username are required", http.StatusBadRequest)
+			return
+		}
+	}
 	team := srv.Team{TeamName: in.TeamName}
 	for _, m := range in.Members {
 		team.Members = append(team.Members, srv.MemberInput{
@@ -38,11 +50,12 @@ func (h *Handler) addTeam(w http.ResponseWriter, r *http.Request) {
 
 	out, err := h.s.AddTeam(r.Context(), team)
 	if err != nil {
-		switch {
-		case err == srv.ErrTeamExists:
+		switch err {
+		case srv.ErrTeamExists:
 			writeError(w, http.StatusBadRequest, "TEAM_EXISTS", "team_name already exists")
 			return
 		default:
+			slog.Error("team_add_error", "err", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
@@ -76,11 +89,12 @@ func (h *Handler) getTeam(w http.ResponseWriter, r *http.Request) {
 
 	out, err := h.s.GetTeam(r.Context(), teamName)
 	if err != nil {
-		switch {
-		case err == srv.ErrNotFound:
+		switch err {
+		case srv.ErrNotFound:
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "resource not found")
 			return
 		default:
+			slog.Error("team_get_error", "err", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}

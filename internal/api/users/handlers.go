@@ -3,6 +3,7 @@ package users
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	svc "github.com/NetPo4ki/pull-review/internal/service/users"
 	"github.com/go-chi/chi/v5"
@@ -23,6 +24,10 @@ func (h *Handler) setIsActive(w http.ResponseWriter, r *http.Request) {
 	var in SetIsActiveRequest
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(in.UserID) == "" {
+		http.Error(w, "user_id is required", http.StatusBadRequest)
 		return
 	}
 	u, err := h.s.SetIsActive(r.Context(), in.UserID, in.IsActive)

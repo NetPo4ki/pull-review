@@ -12,6 +12,7 @@ type PRDTO struct {
 	AuthorID        string   `json:"author_id"`
 	Status          string   `json:"status"`
 	Assigned        []string `json:"assigned_reviewers"`
+	CreatedAt       *string  `json:"createdAt,omitempty"`
 	MergedAt        *string  `json:"mergedAt,omitempty"`
 }
 type CreatePRResponse struct {
